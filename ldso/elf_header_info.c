@@ -10,8 +10,7 @@ void *get_elf_header()
 
 void set_elf_header(void *addr)
 {
-    if (!elf_header)
-        elf_header = addr;
+    elf_header = addr;
 }
 
 void *get_entry()

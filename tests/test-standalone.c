@@ -2,6 +2,7 @@
 
 int main(int argc, char **argv)
 {
-    puts("HAHAHAHAH");
+    for (int i = 0; i < argc; i++)
+        puts(argv[i]);
     return 0;
 }

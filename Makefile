@@ -35,6 +35,7 @@ READELF_BIN_OBJS= \
 STUDENT_OBJS= \
 			  $(READELF_OBJS) \
 			  ldso/display_auxv.o \
+			  ldso/link_map.o
 
 
 LDSO_OBJS = \

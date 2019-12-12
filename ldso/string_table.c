@@ -20,15 +20,12 @@ void *get_section_header()
 
 char *get_string_table()
 {
-    if (table == NULL)
-    {
-        void *section_head = get_section_header();
-        ElfW(Ehdr) *elf = get_elf_header();
-        void *cast = (char *)section_head + elf->e_shstrndx * get_section_entry_size();
-        ElfW(Shdr) *head = cast;
-        char *tmp = (void *)((char *)elf + head->sh_offset);
-        table = tmp;
-    }
+    void *section_head = get_section_header();
+    ElfW(Ehdr) *elf = get_elf_header();
+    void *cast = (char *)section_head + elf->e_shstrndx * get_section_entry_size();
+    ElfW(Shdr) *head = cast;
+    char *tmp = (void *)((char *)elf + head->sh_offset);
+    table = tmp;
     return table;
 }
 
@@ -58,28 +55,25 @@ void *get_str_tab()
 
 void *get_dynamic_section()
 {
-    if (!dynamic)
+    get_string_table();
+    ElfW(Shdr) *head = get_section_header();
+    set_str_tab();
+    ElfW(Ehdr) *elf = get_elf_header();
+    uint16_t size = get_section_table_size();
+    for (uint16_t i = 0; i < size; i++)
     {
-        get_string_table();
-        ElfW(Shdr) *head = get_section_header();
-        set_str_tab();
-        ElfW(Ehdr) *elf = get_elf_header();
-        uint16_t size = get_section_table_size();
-        for (uint16_t i = 0; i < size; i++)
-        {
-            char *dyn = ".dynamic";
-            int eq = 0;
-            for (int i = 0; i < 9; i++)
-                if (dyn[i] != (table + head->sh_name)[i])
-                    eq = 1;
-            if (eq == 0)
-                break;
-            char *next = (void *)head;
-            next += get_section_entry_size();
-            head = (void *)next;
-        }
-        dynamic = (char *)elf + head->sh_offset;
+        char *dyn = ".dynamic";
+        int eq = 0;
+        for (int i = 0; i < 9; i++)
+            if (dyn[i] != (table + head->sh_name)[i])
+                eq = 1;
+        if (eq == 0)
+            break;
+        char *next = (void *)head;
+        next += get_section_entry_size();
+        head = (void *)next;
     }
+    dynamic = (char *)elf + head->sh_offset;
     return dynamic;
 }
 
@@ -114,18 +108,19 @@ int get_dynamic_size(ElfW(Dyn) *dynamic)
     return i;
 }
 
-void get_needed_entry(ElfW(Dyn) *dynamic, struct link_map *map)
+char *get_needed_entry(ElfW(Dyn) **dynamic)
 {
-    while (dynamic->d_tag != DT_NULL)
+    while ((*dynamic)->d_tag != DT_NULL)
     {
-        if (dynamic->d_tag == DT_NEEDED)
+        if ((*dynamic)->d_tag == DT_NEEDED)
         {
-            char *name = ((char *)strtab + dynamic->d_un.d_val);
-            printf("%s\n", name);
-            //map_add(map, dynamic, name, 0);
+            char *name = ((char *)strtab + (*dynamic)->d_un.d_val);
+            (*dynamic) += 1;
+            return name;
         }
-        dynamic++;
+        (*dynamic)++;
     }
+    return 0;
 }
 
 

@@ -20,6 +20,6 @@ void *get_section_table_offset();
 uint16_t get_section_entry_size();
 uint16_t get_section_table_size();
 unsigned char get_elf_class();
-void get_needed_entry(ElfW(Dyn) *dynamic, struct link_map *map);
+char *get_needed_entry(ElfW(Dyn) **dynamic);
 
 #endif /* !HEADER_INFO_H */
