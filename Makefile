@@ -136,4 +136,4 @@ dummy_readelf: $(READELF_BIN_OBJS)
 	$(LINK.o) -shared $^ $(LDLIBS) -o $@
 
 clean:
-	$(RM) $(TESTS) $(TEST_LIBS) $(LDSO_OBJS) $(TARGETS) $(READELF_BIN_OBJS) libc/*.o
+	$(RM) $(TESTS) $(TEST_LIBS) $(LDSO_OBJS) $(TARGETS) $(READELF_BIN_OBJS) libc/*.o tests/test-standalone.o

@@ -41,40 +41,30 @@ static inline void jmp_to_usercode(u64 entry, u64 stack)
                  [stack] "r"(stack));
 }
 
-static void build_link_map_rec(char *filename, struct link_map *map)
+static void build_link_map_rec(char *filename, struct link_map *map, ElfW(auxv_t) *auxv)
 {
-    int size = 0;
-    void *file = read_elf_file(filename, &size);
-    if (file == MAP_FAILED)
-        return ;
-    
-    link_map_add(map, filename, file);
+    link_map_add(map, filename, auxv);
     if (!map)
-    {
-        free_file(file, size);
         return;
-    }
     
     ElfW(Dyn) *dynamic = get_dynamic_section();
     char *needed = NULL;
     while ((needed = get_needed_entry(&dynamic)) != NULL)
-            build_link_map_rec(needed, map);
+            build_link_map_rec(needed, map, auxv);
     return;
 }
 
 static struct link_map *build_link_map(char **envp, void *file)
 {
     ElfW(auxv_t) *auxv = find_auxv(envp);
-    void *vdso = (void *)get_auxv_entry(auxv, AT_SYSINFO_EHDR)->a_un.a_val;
-    set_elf_header(vdso);
-    struct link_map *map = link_map_add(NULL, "linux-vdso.so.1", vdso);
+    struct link_map *map = link_map_add(NULL, "linux-vdso.so.1", auxv);
     set_elf_header(file);
     ElfW(Dyn) *dynamic = get_dynamic_section();
     
     char *needed = NULL;
     while ((needed = get_needed_entry(&dynamic)) != NULL)
-        build_link_map_rec(needed, map);
-    build_link_map_rec("ld.so", map);
+        build_link_map_rec(needed, map, auxv);
+    build_link_map_rec("ld.so", map, auxv);
     return map;
 }
 
@@ -102,13 +92,14 @@ void ldso_main(u64 *stack)
     ElfW(auxv_t) *auxv = find_auxv(envp);
     int size = 0; 
     char *filename = (void *)get_auxv_entry(auxv, AT_EXECFN)->a_un.a_val;
-    void *file = read_elf_file(filename, &size);
-    struct link_map *map = build_link_map(envp, file);
+    ElfW(Ehdr) *file = read_elf_file(filename, &size);
+    struct link_map *map = build_link_map(envp, (void *)file);
     
     handle_options(envp, map);
     
 
-    u64 entry = get_auxv_entry(auxv, AT_ENTRY)->a_un.a_val;
+    //u64 entry = get_auxv_entry(auxv, AT_ENTRY)->a_un.a_val;
+    u64 entry = (char *)file + file->e_entry;
     jmp_to_usercode(entry, (u64)stack);
     _exit(0);
 }

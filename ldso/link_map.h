@@ -3,6 +3,6 @@
 #include <link.h>
 #include <elf.h>
 
-struct link_map *link_map_add(struct link_map *map, char *name, ElfW(Ehdr) *elf);
+struct link_map *link_map_add(struct link_map *map, char *name,ElfW(auxv_t) *auxv);
 
 #endif /* !LINK_MAP_H */
