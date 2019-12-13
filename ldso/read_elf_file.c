@@ -24,6 +24,7 @@ void *read_elf_file(char *filename, int *file_size, ElfW(Addr) addr)
     *file_size = get_file_size(filename);
     if (*file_size == -1)
         return MAP_FAILED;
+    int flags = MAP_FIXED_NOREPLACE | MAP_PRIVATE | MAP_DENYWRITE;
     void *file = mmap(addr, *file_size, PROT_READ | PROT_EXEC | PROT_WRITE, MAP_PRIVATE, filedes, 0);
     if (file == MAP_FAILED)
         return MAP_FAILED;

@@ -5,6 +5,7 @@
 #include <elf.h>
 
 void *read_elf_file(char *filename, int *size, ElfW(Addr) *addr);
+int get_file_size(char *filename);
 void free_file(char *ptr, int size);
 
 #endif /*!READ_ELF_FILE_C*/

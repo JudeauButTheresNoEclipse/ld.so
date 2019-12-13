@@ -13,7 +13,8 @@
 #include <link.h>
 
 
-static void load_dso(struct link_map *map, int filedes);
+static void load_dso(struct link_map *map, int filedes, ElfW(auxv_t) *auxv);
+void load_interp(struct link_map *map, int filedes, ElfW(auxv_t) *auxv);
 
 
 
@@ -28,19 +29,20 @@ struct link_map *link_map_add(struct link_map *map, char *name, ElfW(auxv_t) *au
     int filedes = open(name, O_RDWR);
     void *file;
     if (strcmp(name, "linux-vdso.so.1"))
-    {
-        file = read_elf_file(name, &size);
-    }
+        file = read_elf_file(name, &size, 0);
     else
-        file = (void *)get_auxv_entry(auxv, AT_SYSINFO_EHDR)->a_un.a_val;
+        file = NULL;
+        //file = (void *)get_auxv_entry(auxv, AT_SYSINFO_EHDR)->a_un.a_val;
 
     struct link_map *new = malloc(sizeof(struct link_map));
     new->l_addr = (ElfW(Addr))file; 
     new->l_name = name;
     new->l_ld = get_dynamic_section();
-    new->l_next = NULL; 
-    if (strcmp(name, "linux-vdso.so.1"))
-        load_dso(new, filedes);
+    new->l_next = NULL;
+    if (!strcmp(name, "linux-vdso.so.1"))
+        return new;
+    else    
+        load_dso(new, filedes, auxv);
 
     if (!map)
     {
@@ -71,10 +73,25 @@ static void load_dso(struct link_map *map, int filedes, ElfW(auxv_t) *auxv)
     while (program_header->p_type != PT_LOAD)
         program_header++;
     int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
-    int flags = MAP_PRIVATE;
+    int flags = MAP_FIXED_NOREPLACE | MAP_PRIVATE | MAP_DENYWRITE;
     for (int i = 0; i < nb_load; i++)
     {
-        mmap((void *)program_header->p_vaddr, program_header->p_filesz, prot, flags, filedes, program_header->p_offset);
+        printf("MMAP: %p\n", mmap((void *)program_header->p_vaddr, program_header->p_filesz, prot, flags, filedes, program_header->p_offset));
+        printf("SIZE: 0x%016lx\n", program_header->p_filesz);
         program_header++;
     }
+}
+
+void load_interp(struct link_map *map, int filedes, ElfW(auxv_t) *auxv)
+{
+    ElfW(Ehdr) *elf = (void *)map->l_addr;
+    ElfW(Phdr) *program_header = (void *)(map->l_addr + elf->e_phoff);
+    while (program_header->p_type != PT_INTERP)
+        program_header++;
+    int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+    int flags = MAP_FIXED | MAP_PRIVATE | MAP_DENYWRITE;
+    mmap((void *)program_header->p_vaddr, program_header->p_filesz, prot, flags,
+            filedes, program_header->p_offset);
+
+    
 }
