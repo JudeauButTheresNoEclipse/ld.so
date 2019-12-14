@@ -63,12 +63,13 @@ void ldso_main(u64 *stack)
     elf_auxv_t *auxv = find_auxv(envp);
     
     char *filename = (void *)get_auxv_entry(auxv, AT_EXECFN)->a_un.a_val;
-    elf_addr interp = (void *)get_auxv_entry(auxv, AT_SYSINFO_EHDR)->a_un.a_val;
     char **table = build_dependency_table(filename);
-    struct link_map *map = build_link_map(table, interp);
+    struct link_map *map = build_link_map(table);
+    for (struct link_map *next = map; next; next = next->l_next)
+        resolve_relocations(next->l_name, map);
     handle_options(envp, map);
     u64 entry = get_auxv_entry(auxv, AT_ENTRY)->a_un.a_val;
     printf("ENTRY: %lx\n", entry);
-    _exit(0);
     jmp_to_usercode(entry, (u64)stack);
+    _exit(0);
 }

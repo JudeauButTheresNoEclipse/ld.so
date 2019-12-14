@@ -25,8 +25,8 @@ elf_ehdr *get_elf_ehdr(char *filename)
     //TODO Check return values
     elf_ehdr *elf = malloc(sizeof(elf_ehdr));
     int r = read(filedes, (char *)elf, sizeof(elf_ehdr));
-    //TODO Check return values
-    close(filedes);
+    if (r != -1)
+        close(filedes);
     return elf;
 }
 
@@ -107,6 +107,8 @@ elf_sym *get_dynamic_element(elf_ehdr *elf, char *name, char *elt)
         }
         shdr++;
     }
+    if (!section || section == MAP_FAILED)
+        return NULL;
     return (void *) ((char *)section + shdr->sh_offset);
 }
 
@@ -115,15 +117,14 @@ char *name_from_dynsim_index(elf_ehdr *elf,  char *name, int index)
     elf_sym *symbolic = get_dynamic_element(elf, name, ".dynsym");
     for (int i = 0; i < index; i++)
         symbolic++;
-    elf_sym *dynstr = get_dynstr(name);
-    char *res = strdup((void *)dynstr[symbolic->st_name].st_name);
-    free(dynstr);
+    char *dynstr = (void *)get_dynstr(name);
+    char *res = dynstr + symbolic->st_name;
     return res;
 }
 
 elf_rela *get_relocations(elf_ehdr *elf, char *name)
 {
-    elf_sym *relaptl = get_dynamic_element(elf, name, "rela.ptl");
+    elf_sym *relaptl = get_dynamic_element(elf, name, ".rela.plt");
     return (void *)relaptl;
 }
 
@@ -134,7 +135,7 @@ int get_nb_rela(elf_ehdr *elf, char *name)
     int res = 0;
     for (int i = 0; i < elf->e_shnum; i++)
     {
-        if (!strcmp(table + shdr->sh_name, ".rela.ptl"))
+        if (!strcmp(table + shdr->sh_name, ".rela.plt"))
         {
             res = shdr->sh_size / sizeof(elf_sym);
             break;
@@ -157,43 +158,49 @@ static uint32_t gnu_hash (const char *namearg) //from binutils-gdb
 
 elf_sym *link_map_lookup(struct link_map *map, char *rela_name)
 {
+    printf("\n\n\nRELA_NAME: %s\n", rela_name);
     uint32_t hash = gnu_hash(rela_name);
     elf_sym *res = NULL;
     for (struct link_map *next = map; next && !res; next = next->l_next)
     {
         char *name = map->l_name;
-        elf_sym *dynstr = get_dynstr(name);
         elf_ehdr *elf = get_elf_ehdr(name);
-        char *strtab = get_dynamic_element(elf, name, ".strtab");
+        char *strtab = (void *)get_dynamic_element(elf, name, ".strtab");
+        elf_sym *dynstr = get_dynstr(name);
         const void *hashtable = (void *)get_dynamic_element(elf, name, ".gnu.hash");
+        printf("HASHTABLE: %lx\n", *(elf_addr *)hashtable); 
+        
+
         uint32_t nbuckets = ((uint32_t *)hashtable)[0];
+        printf("NB_BUCKETS: %d\n", nbuckets);
         uint32_t symoffset = ((uint32_t *)hashtable)[1];
         uint32_t bloom_size = ((uint32_t *)hashtable)[2];
         uint32_t bloom_shift = ((uint32_t *)hashtable)[3];
         elf_addr *bloom = (void *)&(hashtable[4]);
         uint32_t *buckets = (void *)&bloom[bloom_size];
         uint32_t *chain = &buckets[nbuckets];
+        elf_addr word = bloom[(hash / (sizeof(elf_addr) * 8)) % bloom_size];
+        elf_addr mask = 0 | (elf_addr)1 << (hash % (sizeof(elf_addr) * 8))
+            | (elf_addr)1 << ((hash >> bloom_shift) % (sizeof(elf_addr) * 8));
 
-        elf_addr word = bloom[(hash / sizeof(elf_addr))];
-        elf_addr mask = 0 | 1 << (hash % sizeof(elf_addr))
-            | 1 << ((hash >> bloom_shift) % sizeof(elf_addr));
-
-        if ((word & mask) != mask)
-            continue;
+        /*if ((word & mask) != mask)
+            continue;*/
         uint32_t symix = buckets[hash % nbuckets];
-        if (symix < symoffset)
-            continue;;
+        /*if (symix < symoffset)
+            continue;*/
 
         while (1)
         {
-            char * symname = strtab + dynstr[symix].st_name;
-            uint32_t hash = chain[symix - symoffset];
-            if (hash | 1 == hash | 1 && strcmp(name, symname) == 0)
+            //char * symname = strtab + dynstr[symix].st_name;
+            char * symname = (char *)dynstr + symix;
+            printf("SYMNAME: %s", symname);
+            uint32_t hashing = chain[symix - symoffset];
+            if ((hash | 1) == (hashing | 1) && (strcmp(name, symname)) == 0)
             {
-                res = &dynstr[symix];
+                res = &dynstr[symix] + map->l_addr;
                 break;
             }
-            if (hash & 1)
+            if (hashing & 1)
                 break;
 
             symix++;

@@ -56,7 +56,7 @@ char **build_dependency_table(char *executable_name)
     return res;
 }
 
-struct link_map *build_link_map(char **table, elf_addr interp)
+struct link_map *build_link_map(char **table)
 {
     struct link_map *map = NULL;
     struct link_map *ret = NULL;
@@ -75,14 +75,14 @@ struct link_map *build_link_map(char **table, elf_addr interp)
             new->l_addr = offset + count * PAGE_SIZE;
             elf_ehdr *elf = get_elf_ehdr(new->l_name);
             elf_phdr *program = get_program_header(elf, new->l_name);
-            load_program(program, elf, new, interp);
+            load_program(program, elf, new, 0);
             free(elf);
             map->l_next = new;
         }
         else
         {
             new->l_addr = 0;
-            offset = load_elf_binary(new, interp);
+            offset = load_elf_binary(new);
             ret = new;
         }
         map = new; 
@@ -96,20 +96,31 @@ void resolve_relocations(char *name, struct link_map *map)
 {
     elf_ehdr *elf = get_elf_ehdr(name);
     elf_rela *rela = get_relocations(elf, name);
+    if (!rela)
+    {
+        free(elf);
+        return;
+    }
     int nb_rela = get_nb_rela(elf, name);
+    printf("\n\nND_RELA: %d : %s\n", nb_rela, name);
     for (int i = 0; i < nb_rela; i++)
     {
         if (ELF64_R_TYPE(rela->r_info) == R_X86_64_JUMP_SLOT)
         {    
             char *rela_name = name_from_dynsim_index(elf, name, ELF64_R_SYM(rela->r_info));
             elf_sym *symbol = link_map_lookup(map, rela_name);
-            //if (symbol == NULL)
-            //    goto out;
-            elf_addr *tmp = (void *)(rela->r_offset);
-            *tmp = symbol->st_value;
+            if (symbol)
+            {
+                printf("SYMBOL: %lx\n", symbol->st_value);
+                //if (symbol == NULL)
+                //    goto out;
+                elf_addr *tmp = (void *)(rela->r_offset);
+                *tmp = symbol->st_value;
+            }
         }
+        rela++;
     }
-    free(rela);
+    free(elf);
 }
 
 static void load_interp(elf_addr interp)
@@ -125,8 +136,8 @@ static void load_interp(elf_addr interp)
         if (program->p_type == PT_LOAD)
         {
             int filedes = open(name, O_RDONLY);
-            elf_addr addr = mmap(interp + program->p_vaddr, program->p_filesz, 
-                    prot, flags, filedes, program->p_offset);
+            elf_addr addr = (elf_addr)mmap((void *)(interp + program->p_vaddr),
+                    program->p_filesz, prot, flags, filedes, program->p_offset);
             printf("%lx, %d, %d\n", program->p_vaddr, program->p_filesz, program->p_offset);
             printf("%lx\n", addr);
             close(filedes);
@@ -140,8 +151,6 @@ void load_program(elf_phdr *program, elf_ehdr *elf, struct link_map *map, elf_ad
 {
 
     int size = elf->e_phnum;
-    int prot = PROT_EXEC | PROT_READ | PROT_WRITE;
-    int flags = MAP_FIXED | MAP_PRIVATE;
     int load = 0;
     for (int i = 0; i < size; i++)
     {
@@ -180,17 +189,17 @@ static elf_addr allocate_map(elf_phdr *phdr)
     int flags = MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS;
     while (phdr->p_type != PT_LOAD)
         phdr++;
-    return mmap(phdr->p_vaddr, 7 * PAGE_SIZE, prot, flags, -1, 0);
+    return (elf_addr)mmap((void *)phdr->p_vaddr, 7 * PAGE_SIZE, prot, flags, -1, 0);
 }
 
 
-elf_addr load_elf_binary(struct link_map *map, elf_addr interp)
+elf_addr load_elf_binary(struct link_map *map)
 {
     elf_ehdr *elf = get_elf_ehdr(map->l_name);
     elf_phdr *phdr = get_program_header(elf, map->l_name);
     elf_addr ret = allocate_map(phdr);
     printf("MAP: 0x%016lx\n", ret);
-    load_program(phdr, elf, map, interp);
+    load_program(phdr, elf, map, elf->e_entry);
     free(elf);
     return ret;
 }
