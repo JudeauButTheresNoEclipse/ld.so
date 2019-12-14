@@ -25,7 +25,7 @@ elf_sym *get_dynamic_element(elf_ehdr *elf, char *name, char *elt);
 char *name_from_dynsim_index(elf_ehdr *elf,  char *name, int index);
 elf_rela *get_relocations(elf_ehdr *elf, char *name);
 int get_nb_rela(elf_ehdr *elf, char *name);
-elf_sym *link_map_lookup(struct link_map *map, char *rela_name);
+elf_addr link_map_lookup(struct link_map *map, char *rela_name);
 
 
 #endif /*!ELF_MANIPULATION_H*/

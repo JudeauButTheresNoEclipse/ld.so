@@ -66,7 +66,7 @@ void ldso_main(u64 *stack)
     char **table = build_dependency_table(filename);
     struct link_map *map = build_link_map(table);
     for (struct link_map *next = map; next; next = next->l_next)
-        resolve_relocations(next->l_name, map);
+        resolve_relocations(next, map);
     handle_options(envp, map);
     u64 entry = get_auxv_entry(auxv, AT_ENTRY)->a_un.a_val;
     printf("ENTRY: %lx\n", entry);

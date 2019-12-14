@@ -117,7 +117,7 @@ test-libs: LDLIBS = -L. -lc2
 test-libs: libc/crt0.o tests/test-standalone.o
 
 
-#$(TEST_LIBS): CFLAGS += -fPIC
+$(TEST_LIBS): CFLAGS += -fPIC
 
 libc.so: $(LIBC_OBJS)
 
