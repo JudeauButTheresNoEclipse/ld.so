@@ -2,7 +2,6 @@
 #include <stddef.h>
 
 #include "types.h"
-#include "syscall.h"
 
 #include "unistd.h"
 
@@ -72,3 +71,9 @@ void *mremap(void *old_address, size_t old_size, size_t new_size, int flags, ...
 
 	return (void *)rc;
 }
+
+u64 lseek(int fd, u64 offset, int whence)
+{
+	return syscall3(__NR_lseek, fd, offset, whence);
+}
+

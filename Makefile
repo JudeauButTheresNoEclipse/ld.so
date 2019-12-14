@@ -15,38 +15,48 @@ LDFLAGS = \
 	  -nostdlib \
 	  -Wl,-z,norelro \
 
-READELF_OBJS = \
-			  ldso/program_header.o \
-			  ldso/read_elf_file.o \
-			  ldso/string_table.o \
-			  ldso/elf_header_info.o \
-
-READELF_BIN_OBJS= \
-			$(READELF_OBJS) \
-			ldso/section_header_print.o\
-			ldso/elf_header_print.o \
-			ldso/program_header_print.o \
-			ldso/dynamic_section_print.o \
-			ldso/dynsim_section_print.o \
-			ldso/readelf/readelf.o \
-				
-
-
-STUDENT_OBJS= \
-			  $(READELF_OBJS) \
-			  ldso/display_auxv.o \
-			  ldso/link_map.o
-
+#READELF_OBJS = \
+#			  ldso/program_header.o \
+#			  ldso/read_elf_file.o \
+#			  ldso/string_table.o \
+#			  ldso/elf_header_info.o \
+#
+#READELF_BIN_OBJS= \
+#			$(READELF_OBJS) \
+#			ldso/section_header_print.o\
+#			ldso/elf_header_print.o \
+#			ldso/program_header_print.o \
+#			ldso/dynamic_section_print.o \
+#			ldso/dynsim_section_print.o \
+#			ldso/readelf/readelf.o \
+#				
+#
+#
+#STUDENT_OBJS= \
+#			  $(READELF_OBJS) \
+#			  ldso/display_auxv.o \
+#			  ldso/link_map.o
+#
+#
+#LDSO_OBJS = \
+#	    ldso/ldso_start.o \
+#	    ldso/ldso.o \
+#		$(STUDENT_OBJS) \
+#	    $(LIBC_STDIO_OBJS) \
+#	    $(LIBC_STRING_OBJS) \
+#	    $(LIBC_UNISTD_OBJS) \
+#	    libc/malloc.o 
 
 LDSO_OBJS = \
 	    ldso/ldso_start.o \
-	    ldso/ldso.o \
-		$(STUDENT_OBJS) \
+	    ldso/ldso/main.o \
+		ldso/ldso/display_auxv.o \
+		ldso/ldso/elf_manipulation.o \
+		ldso/ldso/functions.o \
 	    $(LIBC_STDIO_OBJS) \
 	    $(LIBC_STRING_OBJS) \
 	    $(LIBC_UNISTD_OBJS) \
 	    libc/malloc.o 
-
 
 LIBC_BASE_OBJS = \
 	    libc/libc_start_main.o \

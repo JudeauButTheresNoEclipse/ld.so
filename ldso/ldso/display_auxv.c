@@ -9,7 +9,7 @@
 #include "types.h"
 #include "stdio.h"
 #include "unistd.h"
-#include "ldso_include/display_auxv.h"
+#include "display_auxv.h"
 
 #define STR 0
 #define HEX 1

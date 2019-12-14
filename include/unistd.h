@@ -4,7 +4,12 @@
 #include <stddef.h>
 #include <asm-generic/fcntl.h>
 #include <linux/stat.h>
+#include "syscall.h"
 #include "types.h"
+
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
 
 void _exit(int rc);
 i64 write(int fd, const void *buf, size_t len);
@@ -14,6 +19,7 @@ int statx(int dirfd, const char *pathname, int flags,
                  unsigned int mask, struct statx *statxbuf);
 struct iovec;
 
+u64 lseek(int fd, u64 offset, int whence);
 i64 writev(int fd, const struct iovec *iov, int iovcnt);
 
 int open(const char *file, int flags, ...);

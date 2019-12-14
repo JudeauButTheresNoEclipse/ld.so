@@ -1,6 +1,8 @@
 #include <stddef.h>
 
 #include "types.h"
+#include "stdlib.h"
+
 
 size_t strlen(const char *s)
 {
