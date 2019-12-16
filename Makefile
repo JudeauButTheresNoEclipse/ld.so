@@ -49,10 +49,11 @@ LDFLAGS = \
 
 LDSO_OBJS = \
 	    ldso/ldso_start.o \
-	    ldso/ldso/main.o \
-		ldso/ldso/display_auxv.o \
-		ldso/ldso/elf_manipulation.o \
-		ldso/ldso/functions.o \
+	    ldso/main.o \
+		ldso/display_auxv.o \
+		ldso/elf_manipulation.o \
+		ldso/functions.o \
+		ldso/dependency.o \
 	    $(LIBC_STDIO_OBJS) \
 	    $(LIBC_STRING_OBJS) \
 	    $(LIBC_UNISTD_OBJS) \
@@ -149,4 +150,4 @@ dummy_readelf: $(READELF_BIN_OBJS)
 
 clean:
 	@$(RM) $(TESTS) $(TEST_LIBS) $(LDSO_OBJS) $(TARGETS)
-	@$(RM) $(READELF_BIN_OBJS) $(LIBC_OBJS) tests/test-standalone.o
+	@$(RM) $(READELF_BIN_OBJS) $(LIBC_OBJS) tests/test-standalone.o libc/crt0.o libc/useless.o

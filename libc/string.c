@@ -2,7 +2,15 @@
 
 #include "types.h"
 #include "stdlib.h"
+#include "string.h"
 
+char *strcat(char *dest, char *src)
+{
+    size_t i, j;
+    for (i = strlen(dest), j = 0; j < strlen(src); j++, i++)
+        dest[i] = src[j];
+    return dest;
+}
 
 size_t strlen(const char *s)
 {
