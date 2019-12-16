@@ -1,6 +1,5 @@
 #include <asm/unistd.h>
 #include <stddef.h>
-
 #include "types.h"
 
 #include "unistd.h"
@@ -14,6 +13,12 @@ i64 write(int fd, const void *buf, size_t len)
 {
 	return syscall3(__NR_write, fd, (u64)buf, len);
 }
+
+int gettimeofday(struct timeval *restrict tp, void *restrict tzp)
+{
+	return syscall2(__NR_gettimeofday, (u64)tp, (u64)tzp);
+}
+
 
 int statx(int dirfd, const char *pathname, int flags,
                  unsigned int mask, struct statx *statxbuf)

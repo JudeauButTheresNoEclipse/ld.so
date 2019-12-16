@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <asm-generic/fcntl.h>
 #include <linux/stat.h>
+#include <bits/types/struct_timeval.h>
 #include "syscall.h"
 #include "types.h"
 
@@ -21,6 +22,7 @@ struct iovec;
 
 u64 lseek(int fd, u64 offset, int whence);
 i64 writev(int fd, const struct iovec *iov, int iovcnt);
+int gettimeofday(struct timeval *restrict tp, void *restrict tzp);
 
 int open(const char *file, int flags, ...);
 

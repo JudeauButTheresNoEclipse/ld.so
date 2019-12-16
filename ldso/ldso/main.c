@@ -15,6 +15,8 @@
 #include "functions.h"
 #include "elf_manipulation.h"
 
+static elf_auxv_t *vdso;
+static char **envp = NULL;
 elf_auxv_t *get_auxv_entry(elf_auxv_t * auxv, u32 type)
 {
     for (; auxv->a_type != AT_NULL; auxv++)
@@ -55,21 +57,35 @@ static void handle_options(char **envp, struct link_map *map)
         }
 }
 
+elf_auxv_t *get_vdso(void)
+{
+    return vdso;
+}
+
+char *get_env(char *name)
+{
+    return get_env_value(envp, name);
+}
+
 void ldso_main(u64 *stack)
 {
     int argc = *stack;
     char **argv = (void *)&stack[1];
-    char **envp = argv + argc + 1;
+    envp = argv + argc + 1;
     elf_auxv_t *auxv = find_auxv(envp);
     
     char *filename = (void *)get_auxv_entry(auxv, AT_EXECFN)->a_un.a_val;
+    elf_addr base = get_auxv_entry(auxv, AT_BASE)->a_un.a_val;
+    elf_auxv_t *vdso = (void *)get_auxv_entry(auxv, AT_SYSINFO_EHDR);
+    //elf_sym *sym = get_dynamic_element((elf_ehdr *)vdso->a_un.a_val, "linux-vdso.so.1", ".symtab");
+    //printf("VDSO: %s\n", (void *)vdso);
     char **table = build_dependency_table(filename);
-    struct link_map *map = build_link_map(table);
+    /*struct link_map *map = build_link_map(table, base, (elf_addr)vdso);
     for (struct link_map *next = map; next; next = next->l_next)
         resolve_relocations(next, map);
     handle_options(envp, map);
     u64 entry = get_auxv_entry(auxv, AT_ENTRY)->a_un.a_val;
     printf("ENTRY: %lx\n", entry);
-    jmp_to_usercode(entry, (u64)stack);
+    jmp_to_usercode(entry, (u64)stack);*/
     _exit(0);
 }

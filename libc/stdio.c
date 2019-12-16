@@ -13,7 +13,7 @@ void puts(const char *s)
 	write(1, "\n", 1);
 #else
 	struct iovec iovec[] = {
-		{ (void *)s, strnlen(s, 50) },
+		{ (void *)s, strlen(s) },
 		{ "\n", 1},
 	};
 

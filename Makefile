@@ -105,6 +105,7 @@ all: $(TARGETS) $(TEST_LIBS) $(TESTS)
 $(TESTS):
 	$(LINK.o) $^ $(LDLIBS) -o $@
 
+#$(TESTS): LDFLAGS += -Wl,--dynamic-linker=./ld.so -Wl,-rpath,/tmp/
 $(TESTS): LDFLAGS += -Wl,--dynamic-linker=./ld.so -Wl,-rpath-link=.
 
 test-standalone: LDLIBS = -L. -luseless
@@ -123,6 +124,7 @@ libc.so: $(LIBC_OBJS)
 
 libc2.so: LDLIBS += -L. -lunistd -lstring
 libc2.so: $(LIBC_BASE_OBJS) $(LIBC_STDIO_OBJS)
+
 
 libunistd.so: $(LIBC_UNISTD_OBJS)
 libstring.so: $(LIBC_STRING_OBJS)
@@ -146,4 +148,5 @@ dummy_readelf: $(READELF_BIN_OBJS)
 	$(LINK.o) -shared $^ $(LDLIBS) -o $@
 
 clean:
-	$(RM) $(TESTS) $(TEST_LIBS) $(LDSO_OBJS) $(TARGETS) $(READELF_BIN_OBJS) libc/*.o tests/test-standalone.o
+	@$(RM) $(TESTS) $(TEST_LIBS) $(LDSO_OBJS) $(TARGETS)
+	@$(RM) $(READELF_BIN_OBJS) $(LIBC_OBJS) tests/test-standalone.o
