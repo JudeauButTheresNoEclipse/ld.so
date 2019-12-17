@@ -1,14 +1,44 @@
 #include <stddef.h>
 
 #include "types.h"
-#include "stdlib.h"
 #include "string.h"
+
+static char *pos = NULL;
+static int is_in(char c, const char *str)
+{
+    while (*str)
+        if (c == *(str++))
+            return 1;
+    return 0;
+}
+
+char *strtok_r(char *str, const char *delim, char **saveptr)
+{
+    if (!str && (str = *saveptr) == NULL)
+        return NULL;
+    char *p = str;
+    while (*p && !is_in(*p, delim))
+        p++;
+    if (*p)
+    {
+        *p = 0;
+        *(saveptr) = p + 1;
+    }
+    else
+        *saveptr = NULL;
+    return str;
+}
+
+char *strtok(char *str, const char *delim)
+{
+    return strtok_r(str, delim, &pos);
+}
 
 char *strcat(char *dest, char *src)
 {
-    size_t i, j;
-    for (i = strlen(dest), j = 0; j < strlen(src); j++, i++)
-        dest[i] = src[j];
+    char *res = dest + strlen(dest);
+    while (*src)
+        *(res++) = *(src++);
     return dest;
 }
 

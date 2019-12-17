@@ -4,6 +4,10 @@
 #include <stddef.h>
 
 char *strcat(char *dest, char *src);
+char *strtok(char *str, const char *delim);
+char *strtok_r(char *str, const char *delim, char **saveptr);
+char *strdup(char *s);
+
 
 size_t strlen(const char *s);
 size_t strnlen(const char *s, size_t maxlen);

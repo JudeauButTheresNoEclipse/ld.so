@@ -23,8 +23,8 @@ elf_dyn *get_dynamic_section(elf_ehdr *elf, char *name);
 char *get_dynamic_name(elf_xword val, char *name);
 elf_sym *get_dynamic_element(elf_ehdr *elf, char *name, char *elt);
 char *name_from_dynsim_index(elf_ehdr *elf,  char *name, int index);
-elf_rela *get_relocations(elf_ehdr *elf, char *name);
 int get_nb_rela(elf_ehdr *elf, char *name);
+int get_nb_reladyn(elf_ehdr *elf, char *name);
 elf_addr link_map_lookup(struct link_map *map, char *rela_name);
 
 

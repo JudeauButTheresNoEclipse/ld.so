@@ -1,4 +1,4 @@
-#CC = clang
+CC = gcc
 CFLAGS = -Wall -Wextra -g
 CFLAGS += \
 	  -ffreestanding \
@@ -30,23 +30,6 @@ LDFLAGS = \
 #			ldso/dynsim_section_print.o \
 #			ldso/readelf/readelf.o \
 #				
-#
-#
-#STUDENT_OBJS= \
-#			  $(READELF_OBJS) \
-#			  ldso/display_auxv.o \
-#			  ldso/link_map.o
-#
-#
-#LDSO_OBJS = \
-#	    ldso/ldso_start.o \
-#	    ldso/ldso.o \
-#		$(STUDENT_OBJS) \
-#	    $(LIBC_STDIO_OBJS) \
-#	    $(LIBC_STRING_OBJS) \
-#	    $(LIBC_UNISTD_OBJS) \
-#	    libc/malloc.o 
-
 LDSO_OBJS = \
 	    ldso/ldso_start.o \
 	    ldso/main.o \
@@ -54,6 +37,7 @@ LDSO_OBJS = \
 		ldso/elf_manipulation.o \
 		ldso/functions.o \
 		ldso/dependency.o \
+		ldso/utility.o \
 	    $(LIBC_STDIO_OBJS) \
 	    $(LIBC_STRING_OBJS) \
 	    $(LIBC_UNISTD_OBJS) \
@@ -91,9 +75,12 @@ TEST_LIBS = \
 	    libc2.so
 
 TESTS = \
-	test-standalone \
 	test-onelib \
 	test-libs \
+	test-standalone \
+
+UNIT_TESTS= \
+	tests/functions.o
 
 
 MALLOC_CPPFLAGS = -include include/malloc-internal.h
@@ -103,11 +90,19 @@ TARGETS = ld.so
 
 all: $(TARGETS) $(TEST_LIBS) $(TESTS)
 
+check: CFLAGS = -g -Wall -Wextra
+check: LDFLAGS = -lcriterion
+check: $(UNIT_TESTS)
+	@$(CC) $(LDFLAGS) $(UNIT_TESTS) $(LIBC_OBJS) -o test #2> /dev/null
+	./test
+
 $(TESTS):
 	$(LINK.o) $^ $(LDLIBS) -o $@
 
-#$(TESTS): LDFLAGS += -Wl,--dynamic-linker=./ld.so -Wl,-rpath,/tmp/
+#$(TESTS): LDFLAGS += -Wl,--dynamic-linker=./ld.so -Wl,-rpath,/tmp
+
 $(TESTS): LDFLAGS += -Wl,--dynamic-linker=./ld.so -Wl,-rpath-link=.
+
 
 test-standalone: LDLIBS = -L. -luseless
 test-standalone: libc/crt0.o tests/test-standalone.o $(LIBC_OBJS)
@@ -150,4 +145,5 @@ dummy_readelf: $(READELF_BIN_OBJS)
 
 clean:
 	@$(RM) $(TESTS) $(TEST_LIBS) $(LDSO_OBJS) $(TARGETS)
-	@$(RM) $(READELF_BIN_OBJS) $(LIBC_OBJS) tests/test-standalone.o libc/crt0.o libc/useless.o
+	@$(RM) $(READELF_BIN_OBJS) $(LIBC_OBJS) tests/test-standalone.o 
+	@$(RM) $(UNIT_TESTS) test libc/crt0.o libc/useless.o

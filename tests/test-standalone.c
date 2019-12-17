@@ -1,12 +1,14 @@
 #include "stdio.h"
-#include "unistd.h"
+//#include "stdlib.h"
+//#include "unistd.h"
 int main(int argc, char **argv)
 {
     for (int i = 0; i < argc; i++)
 	{
-		printf("%d\n", argc);
+		printf("%d\n", i);
         printf("%s\n", argv[i]);
 	}
-	//gettimeofday(0, 0);
+	//int *qqc = malloc(sizeof(int));
+	//gettimeofday(10, 0);
     return 0;
 }
