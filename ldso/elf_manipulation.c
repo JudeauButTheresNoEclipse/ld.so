@@ -315,7 +315,7 @@ elf_addr gnu_hash_lookup(struct link_map *next, char *rela_name)
     elf_addr word = maskwords[(h1 / arch) % hashtab[2]];
     elf_addr mask = 0 | (elf_addr)1 << (h1 % arch)
         | (elf_addr)1 << ((h1 >> hashtab[3]) % arch);
-    if ((word & mask) != mask) //bloom filter
+    if ((word & mask) != mask)
         return 0;
     n = buckets[h1 % nbuckets];
     if (!n)

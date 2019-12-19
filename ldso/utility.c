@@ -9,4 +9,3 @@ char *strdup(char *s)
     res = memcpy(res, s, len);
     return res;
 }
-

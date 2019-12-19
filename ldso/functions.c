@@ -55,11 +55,8 @@ struct link_map *build_link_map(char **table, elf_addr base, elf_addr vdso)
         else
         {
             new->l_addr = 0;
-            elf_ehdr *elf = get_elf_ehdr(new->l_name);
-            offset = load_elf_binary(new, base);
+            offset = load_elf_binary(new);
             ret = new;
-            //count = (elf_addr)new->l_ld - elf->e_entry + 10;
-            //printf("%lx %lx %lx\n", count, new->l_ld, base);
         }
         map = new; 
         table++;
@@ -124,15 +121,18 @@ elf_addr load_program(elf_phdr *program, elf_ehdr *elf, struct link_map *map)
             elf_addr addr = program->p_vaddr + map->l_addr;
             long r = read(filedes, (void *)addr, program->p_filesz);
             close(filedes);
-            if (l == -1 || r == -1)
+            if (l < 0 || r < 0)
             {
                 printf("failed to load program section");
                 _exit(1);
             }
             load = 1;
-            printf("READ %d\n", r);
-            int m = mprotect(ALIGN(addr), r, prot(program->p_flags));
-            printf("PROTECT %d\n", m);
+            int m = mprotect((void *)ALIGN(addr), r + addr - ALIGN(addr), prot(program->p_flags));
+            if (m < 0)
+            {
+                printf("incorrect permissions for segment %d in %s\n", i, map->l_name);
+                _exit(0);
+            }
         }
         else if (program->p_type == PT_DYNAMIC)
             map->l_ld = (elf_dyn *)(program->p_vaddr + map->l_addr);
@@ -143,7 +143,7 @@ elf_addr load_program(elf_phdr *program, elf_ehdr *elf, struct link_map *map)
     return ret;
 }
 
-elf_addr load_elf_binary(struct link_map *map, elf_addr base)
+elf_addr load_elf_binary(struct link_map *map)
 {
     elf_ehdr *elf = get_elf_ehdr(map->l_name);
     elf_phdr *phdr = get_program_header(elf, map->l_name);
@@ -156,7 +156,7 @@ static int relocation_lookup(elf_rela *rela, int nb_rela,
         struct link_map *next, struct link_map *map)
 {   
     elf_ehdr *elf = get_elf_ehdr(next->l_name);
-    extern void __reloc(void);
+    elf_addr addr = 0;
     for (int i = 0; i < nb_rela; i++)
     {
         if (ELF64_R_TYPE(rela->r_info) == R_X86_64_JUMP_SLOT  || 
@@ -164,38 +164,60 @@ static int relocation_lookup(elf_rela *rela, int nb_rela,
         {    
             char *rela_name = name_from_dynsim_index(elf, next->l_name,
                     ELF64_R_SYM(rela->r_info));
-            printf("RELA %s\n", rela_name);
-            elf_addr addr = link_map_lookup(map, rela_name);
+            elf_addr *tmp = (void *)(rela->r_offset + next->l_addr);
+            // printf("RELA: %lx, %s\n", rela->r_offset, rela_name);
+            //printf("TMP: %lx, *TMP %lx\n", tmp, *tmp);
+            addr = link_map_lookup(map, rela_name);
             if (addr)
-            {
-                printf("RELA: %lx, %s\n", rela->r_offset, rela_name);
-                uint64_t *tmp = (void *)(rela->r_offset + next->l_addr);
-                printf("TMP: %lx, *TMP %lx\n", tmp, *tmp);
-                *tmp = (elf_addr)&__reloc;
                 *tmp = addr;
-           }
+
         }
-        /*if (ELF64_R_TYPE(rela->r_info) == R_X86_64_RELATIVE)
+        if (ELF64_R_TYPE(rela->r_info) == R_X86_64_RELATIVE)
         {
             printf("%lx\n", rela->r_offset);
             elf_addr *tmp = (void *)(rela->r_offset + next->l_addr);
             printf("TMP %lx", tmp);
             *tmp = rela->r_addend + next->l_addr;
-        }*/
+        }
         rela++;
     }
     free(elf);
     return 0;
 }
 
-void resolve_relocations(struct link_map *next, struct link_map *map)
+static void relocation_lazy(struct link_map *next, elf_rela *rela, int nb_rela)
+{
+    extern void __reloc(void);
+    elf_ehdr *elf = get_elf_ehdr(next->l_name);
+    elf_shdr *shdr = get_section_header(elf, next->l_name);
+    char *strtab = (void *)get_dynamic_element(elf, next->l_name, ".shstrtab");
+    while (shdr && strcmp(shdr->sh_name + strtab, ".got.plt"))
+        shdr++;
+    elf_addr *got_plt = shdr->sh_addr + next->l_addr;
+    got_plt[1] = (elf_addr)next;
+    got_plt[2] = (elf_addr)&__reloc;
+    for (int i = 0; i < nb_rela; i++, rela++)
+    {
+        elf_addr *tmp = (void *)(rela->r_offset + next->l_addr);
+        *tmp += next->l_addr;
+    }
+    free(elf);
+    free(shdr);
+    free(strtab);
+}
+
+
+void resolve_relocations(struct link_map *next, struct link_map *map, int lazy)
 {
     elf_ehdr *elf = get_elf_ehdr(next->l_name);
     elf_rela *rela = (elf_rela *)get_dynamic_element(elf, next->l_name, ".rela.plt");
     if (rela)
     {
         int nb_rela = get_nb_rela(elf, next->l_name);
-        relocation_lookup(rela, nb_rela, next, map);
+        if (!lazy)
+            relocation_lookup(rela, nb_rela, next, map);
+        else
+            relocation_lazy(next, rela, nb_rela);
     } 
     rela = (elf_rela *)get_dynamic_element(elf, next->l_name, ".rela.dyn");
     if (rela)
