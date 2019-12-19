@@ -46,6 +46,11 @@ int open(const char *file, int flags, ...)
 	return syscall3(__NR_open, (u64)file, flags, mode);
 }
 
+int mprotect(void *addr, size_t len, int prot)
+{
+	return syscall3(__NR_mprotect, (u64)addr, len, prot);
+}
+
 void *mmap(void *addr, size_t len, int prot, int flags, int fd, i64 offset)
 {
 	i64 rc = syscall6(__NR_mmap, (u64)addr, len, prot, flags, fd, offset);

@@ -17,6 +17,7 @@
 #include "include/dependency.h"
 
 static elf_auxv_t *vdso;
+uint32_t a = 0;
 static char **envp = NULL;
 
 
@@ -73,11 +74,11 @@ static void handle_options(char **envp, struct link_map *map)
     }
 }
 
-void foo(void)
+void foo(elf_addr *qqc, int index)
 {
-    elf_addr pos = 0;
-    puts("i'm in");
-    
+    //asm volatile(movq 0x260(%rsp), %rsi);
+    //printf("%lx\n", qqc);
+    printf("%d\n", index);
     _exit(0);
 }
 
@@ -88,7 +89,7 @@ void ldso_main(u64 *stack)
     char **argv = (void *)&stack[1];
     envp = argv + argc + 1;
     elf_auxv_t *auxv = find_auxv(envp);
-
+    stack= stack;
     char *filename = (void *)get_auxv_entry(auxv, AT_EXECFN)->a_un.a_val;
     elf_addr base = get_auxv_entry(auxv, AT_BASE)->a_un.a_val;
     vdso = (void *)get_auxv_entry(auxv, AT_SYSINFO_EHDR);

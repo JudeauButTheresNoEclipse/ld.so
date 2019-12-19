@@ -38,6 +38,7 @@ LDSO_OBJS = \
 		ldso/functions.o \
 		ldso/dependency.o \
 		ldso/utility.o \
+		ldso/reloc.o \
 	    $(LIBC_STDIO_OBJS) \
 	    $(LIBC_STRING_OBJS) \
 	    $(LIBC_UNISTD_OBJS) \
@@ -125,7 +126,6 @@ libc2.so: $(LIBC_BASE_OBJS) $(LIBC_STDIO_OBJS)
 libunistd.so: $(LIBC_UNISTD_OBJS)
 libstring.so: $(LIBC_STRING_OBJS)
 libuseless.so: $(USELESS_OBJS)
-
 
 ld.so: CFLAGS += -fPIC
 ld.so: LDFLAGS += -Wl,--version-script,ldso/exported-symbols.map -Wl,-soname,ld.so

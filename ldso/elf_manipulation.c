@@ -309,7 +309,7 @@ elf_addr gnu_hash_lookup(struct link_map *next, char *rela_name)
     uint32_t *hashvals = buckets + nbuckets;
     uint32_t h2 = h1 >> shift2;
     size_t arch = sizeof(size_t) * 8; //32 or 64 depending on arch
-    printf("SEARCHING IN %s\n", name);
+    //printf("SEARCHING IN %s\n", name);
     
     size_t n = (h1 / arch) & (hashtab[2] - 1);
     elf_addr word = maskwords[(h1 / arch) % hashtab[2]];

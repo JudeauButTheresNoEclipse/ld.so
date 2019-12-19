@@ -34,5 +34,6 @@ int open(const char *file, int flags, ...);
 void *mmap(void *addr, size_t len, int prot, int flags, int fd, i64 offset);
 int munmap(void *addr, size_t len);
 void *mremap(void *old_address, size_t old_size, size_t new_size, int flags, ...);
+int mprotect(void *addr, size_t len, int prot);
 
 #endif /* !UNISTD_H */

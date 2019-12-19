@@ -8,6 +8,8 @@
 #include "include/utility.h"
 
 #define MAX_DEP 100
+
+
 char *get_env(char *name);
 elf_auxv_t *get_vdso(void);
 
