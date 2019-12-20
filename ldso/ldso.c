@@ -12,7 +12,7 @@
 #include "stdlib.h"
 #include "unistd.h"
 #include "include/display_auxv.h"
-#include "include/functions.h"
+#include "include/loader.h"
 #include "include/elf_manipulation.h"
 #include "include/dependency.h"
 #include "include/relocations.h"
@@ -73,8 +73,6 @@ static void handle_options(char **envp, struct link_map *map)
     }
 }
 
-
-
 void ldso_main(u64 *stack)
 {
     int argc = *stack;
@@ -86,7 +84,7 @@ void ldso_main(u64 *stack)
     char *filename = (void *)get_auxv_entry(auxv, AT_EXECFN)->a_un.a_val;
     elf_addr base = get_auxv_entry(auxv, AT_BASE)->a_un.a_val;
     vdso = (void *)get_auxv_entry(auxv, AT_SYSINFO_EHDR);
-    char **table = build_dependency_table(filename);
+    char **table = build_dependency_table(filename, envp, vdso);
 
 
     struct link_map *map = build_link_map(table, base, (elf_addr)vdso);

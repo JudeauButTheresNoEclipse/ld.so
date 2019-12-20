@@ -1,9 +1,9 @@
 #include <link.h>
 #include <elf.h>
-#include "stdlib.h"
+#include <stdlib.h>
 #include <string.h>
-#include "stdio.h"
-#include "readelf/header_info.h"
+#include <stdio.h>
+#include "include/header_info.h"
 
 static char *table = NULL;
 static void *dynamic = NULL;

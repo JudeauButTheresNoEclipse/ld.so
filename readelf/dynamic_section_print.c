@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <link.h>
 #include <elf.h>
-#include "string.h"
+#include <string.h>
 
-#include "readelf/print_headers.h"
-#include "readelf/header_info.h"
+#include "include/print_headers.h"
+#include "include/header_info.h"
 
 #define NAME 0
 #define VAL 1

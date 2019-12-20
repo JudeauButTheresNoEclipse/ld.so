@@ -2,8 +2,8 @@
 #include <link.h>
 #include <elf.h>
 
-#include "readelf/print_headers.h"
-#include "readelf/header_info.h"
+#include "include/print_headers.h"
+#include "include/header_info.h"
 
 void print_type(unsigned char st_info)
 {

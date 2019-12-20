@@ -1,6 +1,6 @@
 #include "include/dependency.h"
 #include "include/elf_manipulation.h"
-#include "include/elf_manipulation.h"
+#include "include/display_auxv.h"
 #include "string.h"
 #include "stdio.h"
 #include "unistd.h"
@@ -11,7 +11,6 @@
 
 
 char *get_env(char *name);
-elf_auxv_t *get_vdso(void);
 
 static int is_in(char **res, char *name, int nb_dep)
 {
@@ -64,11 +63,11 @@ char *get_lib_absolute_path(char *name, char *binary)
     if (test(".", name))
         return name;
     elf_ehdr *elf = get_elf_ehdr(binary);
-    elf_dyn *dyn = get_dynamic_section(elf, binary);
+    elf_dyn *dyn = (void *)get_section(elf, binary, ".dynamic");
     elf_dyn *cpy = dyn;
     char *path = NULL;
     char *res = NULL;
-    char *string = (void *)get_dynamic_element(elf, binary, ".dynstr");
+    char *string = (void *)get_section(elf, binary, ".dynstr");
     
     while (dyn->d_tag != DT_NULL)
     {
@@ -121,12 +120,13 @@ static void fill_dependency(char **res, int *nb_dep)
     for (int i = 0; i < *nb_dep; i++)
     {   
         elf_ehdr *elf = get_elf_ehdr(res[i]);
-        elf_dyn *dynamic = get_dynamic_section(elf, res[i]);
+        elf_dyn *dynamic = (void *)get_section(elf, res[i], ".dynamic");
+        char *dynstr = (void *)get_section(elf, res[i], ".dynstr");
         while (dynamic->d_tag != DT_NULL)
         {
             if (dynamic->d_tag == DT_NEEDED)
             {
-                char *name = get_dynamic_name(dynamic->d_un.d_val, res[i]);
+                char *name = dynstr + dynamic->d_un.d_val;
                 name = get_lib_absolute_path(name, res[i]);
                 if (!is_in(res, name, *nb_dep))
                     res[(*nb_dep)++] = name;
@@ -137,13 +137,13 @@ static void fill_dependency(char **res, int *nb_dep)
     }
 }
 
-char **build_dependency_table(char *executable_name)
+char **build_dependency_table(char *executable_name, char **envp, elf_auxv_t *vdso)
 {
     char **res = malloc(MAX_DEP * sizeof(char *));
     int nb_dep = 2;
     res[0] = executable_name;
     res[1] = "ld.so";
-    char *preload = get_env("LD_PRELOAD");
+    char *preload = get_env_value(envp, "LD_PRELOAD");
     if (preload)
     {
         char *buff = strtok(preload, ":; ");
@@ -157,7 +157,7 @@ char **build_dependency_table(char *executable_name)
         cpy = nb_dep;
         fill_dependency(res, &nb_dep);
     } while(cpy != nb_dep);
-    if (get_vdso())
+    if (vdso)
         res[nb_dep++] = "linux-vdso.so.1";
     res[nb_dep] = NULL;
     return res;

@@ -4,7 +4,7 @@
 #include <link.h>
 #include <elf.h>
 
-void *read_elf_file(char *filename, int *size, ElfW(Addr) *addr);
+void *read_elf_file(char *filename, int *size);
 int get_file_size(char *filename);
 void free_file(char *ptr, int size);
 

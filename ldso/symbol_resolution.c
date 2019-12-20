@@ -16,7 +16,7 @@
 uint32_t *get_hashtab(elf_ehdr *elf, struct link_map *map, int type)
 {
     char *name = map->l_name;
-    elf_dyn *dyn = (void *)get_dynamic_element(elf, name, ".dynamic");
+    elf_dyn *dyn = (void *)get_section(elf, name, ".dynamic");
     uint32_t *hashtab = NULL;
     while (dyn->d_tag != DT_NULL)
     {
@@ -47,12 +47,12 @@ elf_addr gnu_hash_lookup(struct link_map *next, char *rela_name)
     char *name = next->l_name;
     elf_sym *sym = NULL;
     elf_ehdr *elf = get_elf_ehdr(name);
-    char *strtab = (void *)get_dynamic_element(elf, name, ".dynstr");
+    char *strtab = (void *)get_section(elf, name, ".dynstr");
     uint32_t *hashtab = (void *)((char *)get_hashtab(elf, next, DT_GNU_HASH) + next->l_addr);
     if (!hashtab)
         return 0;
-    elf_sym *syms = (void *)get_dynamic_element(elf, name, ".dynsym");
-    size_t size = get_dynsym_size(elf, name);
+    elf_sym *syms = (void *)get_section(elf, name, ".dynsym");
+    size_t size = get_section_size(elf, name, ".dynsym");
     uint32_t nbuckets = hashtab[0];
     size_t *maskwords = (size_t *)(hashtab + 4);
     uint32_t *buckets = hashtab + 4 + (hashtab[2] * (sizeof(size_t) /
@@ -107,15 +107,14 @@ elf_addr hash_lookup(struct link_map *next, char *rela_name)
     uint32_t *hashtab = (void *)((char *)get_hashtab(elf, next, DT_HASH) + next->l_addr);
     if (!hashtab)
         return 0;
-    elf_sym *symtab = (void *)get_dynamic_element(elf, next->l_name, ".dynsym");
-    char *strtab = (void *)get_dynamic_element(elf, next->l_name, ".dynstr");
+    elf_sym *symtab = (void *)get_section(elf, next->l_name, ".dynsym");
+    char *strtab = (void *)get_section(elf, next->l_name, ".dynstr");
     uint32_t hash = elf_hash(rela_name);
     uint32_t nbuckets = hashtab[0];
     uint32_t *bucket = hashtab + 2;
     uint32_t *chain = bucket + nbuckets;
-    size_t size = get_dynsym_size(elf, next->l_name);
-    int j = 0;
-    for (uint32_t i = bucket[hash % nbuckets]; j < nbuckets && i && i < size; i = chain[i], j++)
+    size_t size = get_section_size(elf, next->l_name, ".dynsym");
+    for (uint32_t i = bucket[hash % nbuckets]; i && i < size; i = chain[i])
     {
         printf("try: %s - %s\n", strtab + symtab[i].st_name, rela_name);
         if (!strcmp(rela_name, strtab + symtab[i].st_name))

@@ -2,7 +2,7 @@
 #include <elf.h>
 #include <link.h>
 
-#include "readelf/header_info.h"
+#include "include/header_info.h"
 
 static void print_magic_number(unsigned char *e_ident)
 {

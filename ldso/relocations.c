@@ -1,4 +1,4 @@
-#include "include/functions.h"
+#include "include/loader.h"
 #include "stdlib.h"
 #include "string.h"
 #include "stdio.h"
@@ -50,7 +50,7 @@ static void relocation_lazy(struct link_map *next, elf_rela *rela, int nb_rela)
     elf_ehdr *elf = get_elf_ehdr(next->l_name);
     elf_shdr *shdr = get_section_header(elf, next->l_name);
     elf_shdr *cpy = shdr;
-    char *strtab = (void *)get_dynamic_element(elf, next->l_name, ".shstrtab");
+    char *strtab = (void *)get_section(elf, next->l_name, ".shstrtab");
     int i = 0;
     while (i++ < elf->e_shnum && strncmp(shdr->sh_name + strtab, ".got.plt", 8))
         shdr++;
@@ -74,22 +74,24 @@ out:
 void resolve_relocations(struct link_map *next, struct link_map *map, int lazy)
 {
     elf_ehdr *elf = get_elf_ehdr(next->l_name);
-    elf_rela *rela = (elf_rela *)get_dynamic_element(elf, next->l_name, ".rela.plt");
+    elf_rela *rela = (elf_rela *)get_section(elf, next->l_name, ".rela.plt");
     if (rela)
     {
-        int nb_rela = get_nb_rela(elf, next->l_name);
+        int nb_rela = get_section_size(elf, next->l_name, ".rela.plt");
         if (!lazy)
             relocation_lookup(rela, nb_rela, next, map);
         else
             relocation_lazy(next, rela, nb_rela);
-    } 
-    rela = (elf_rela *)get_dynamic_element(elf, next->l_name, ".rela.dyn");
+    }
+    free(rela);
+    rela = (elf_rela *)get_section(elf, next->l_name, ".rela.dyn");
     if (rela)
     {
-        int nb_rela = get_nb_reladyn(elf, next->l_name);
+        int nb_rela = get_section_size(elf, next->l_name, ".rela.dyn");
         relocation_lookup(rela, nb_rela, next, map);
     }
     free(elf);
+    free(rela);
 }
 
 elf_addr runtime_relocations(struct link_map *next, int index)
@@ -98,7 +100,7 @@ elf_addr runtime_relocations(struct link_map *next, int index)
     while (map->l_prev)
         map = map->l_prev;
     elf_ehdr *elf = get_elf_ehdr(next->l_name);
-    elf_rela *rela = (elf_rela *)get_dynamic_element(elf, next->l_name, ".rela.plt");
+    elf_rela *rela = (elf_rela *)get_section(elf, next->l_name, ".rela.plt");
     rela += index;
     char *rela_name = name_from_dynsim_index(elf, next->l_name,
             ELF64_R_SYM(rela->r_info));

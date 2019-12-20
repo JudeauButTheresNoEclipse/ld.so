@@ -1,4 +1,4 @@
-CC = gcc
+CC = cc
 CFLAGS = -Wall -Wextra -g
 CFLAGS += \
 	  -ffreestanding \
@@ -15,27 +15,24 @@ LDFLAGS = \
 	  -nostdlib \
 	  -Wl,-z,norelro \
 
-#READELF_OBJS = \
-#			  ldso/program_header.o \
-#			  ldso/read_elf_file.o \
-#			  ldso/string_table.o \
-#			  ldso/elf_header_info.o \
-#
-#READELF_BIN_OBJS= \
-#			$(READELF_OBJS) \
-#			ldso/section_header_print.o\
-#			ldso/elf_header_print.o \
-#			ldso/program_header_print.o \
-#			ldso/dynamic_section_print.o \
-#			ldso/dynsim_section_print.o \
-#			ldso/readelf/readelf.o \
+READELF_BIN_OBJS= \
+			readelf/section_header_print.o\
+			readelf/elf_header_print.o \
+			readelf/program_header_print.o \
+			readelf/dynamic_section_print.o \
+			readelf/dynsim_section_print.o \
+			readelf/readelf.o \
+			readelf/program_header.o \
+			readelf/read_elf_file.o \
+			readelf/string_table.o \
+			readelf/elf_header_info.o \
 
 LDSO_OBJS = \
 	    ldso/ldso_start.o \
-	    ldso/main.o \
+	    ldso/ldso.o \
 		ldso/display_auxv.o \
 		ldso/elf_manipulation.o \
-		ldso/functions.o \
+		ldso/loader.o \
 		ldso/dependency.o \
 		ldso/utility.o \
 		ldso/reloc.o \
@@ -139,7 +136,7 @@ libc/printf.o: CPPFLAGS += -Iinclude/printf
 libc/malloc.o: CPPFLAGS += $(MALLOC_CPPFLAGS)
 
 dummy_readelf: CFLAGS = -Wall -Wextra -g
-dummy_readelf: CPPFLAGS = -Iinclude
+dummy_readelf: CPPFLAGS = 
 dummy_readelf: LDFLAGS =
 dummy_readelf: $(READELF_BIN_OBJS)
 	$(CC) $(READELF_BIN_OBJS) -o $@
@@ -151,3 +148,4 @@ clean:
 	@$(RM) $(TESTS) $(TEST_LIBS) $(LDSO_OBJS) $(TARGETS)
 	@$(RM) $(READELF_BIN_OBJS) $(LIBC_OBJS) tests/test-standalone.o 
 	@$(RM) $(UNIT_TESTS) test libc/crt0.o libc/useless.o
+	@$(RM) $(READELF_BIN_OBJS) dummy_readelf

@@ -1,9 +1,9 @@
 #include <link.h>
 #include <elf.h>
 #include <stdio.h>
-#include "header_info.h"
-#include "print_headers.h"
-#include "read_elf_file.h"
+#include "include/header_info.h"
+#include "include/print_headers.h"
+#include "include/read_elf_file.h"
 
 int main(int argc, char *argv[])
 {

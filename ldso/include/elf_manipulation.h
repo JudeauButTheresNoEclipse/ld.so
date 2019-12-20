@@ -18,23 +18,29 @@ typedef ElfW(auxv_t) elf_auxv_t;
 typedef ElfW(Rela) elf_rela;
 typedef ElfW(Xword) elf_xword;
 
-/*struct elf_file {
-    elf_addr vaddr;
-    struct elf_ehdr *ehdr;
-    struct elf_shdr *shdr;
-};*/
+struct elf_file {
+    elf_addr loaded_addr;
+    elf_ehdr *ehdr;
+    elf_phdr *phdr;
+    elf_shdr *shdr;
+    elf_dyn *dyn;
+    elf_rela *rela_dyn;
+    int  rela_dyn_size;
+    elf_rela *rela_plt;
+    int rela_plt_size;
+    char *strtab;
+    char *dynstr;
+    char *shstrtab;
+    struct link_map *elt;
+};
 
 
 elf_ehdr *get_elf_ehdr(char *filename);
 elf_phdr *get_program_header(elf_ehdr *elf, char *name);
 elf_shdr *get_section_header(elf_ehdr *elf, char *name);
-elf_dyn *get_dynamic_section(elf_ehdr *elf, char *name);
-char *get_dynamic_name(elf_xword val, char *name);
-elf_sym *get_dynamic_element(elf_ehdr *elf, char *name, char *elt);
+elf_sym *get_section(elf_ehdr *elf, char *name, char *elt);
 char *name_from_dynsim_index(elf_ehdr *elf,  char *name, int index);
-int get_nb_rela(elf_ehdr *elf, char *name);
-int get_nb_reladyn(elf_ehdr *elf, char *name);
-int get_dynsym_size(elf_ehdr *elf, char *name);
+int get_section_size(elf_ehdr *elf, char *name, char *section);
 
 
 #endif /*!ELF_MANIPULATION_H*/

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <elf.h>
 #include <link.h>
-#include "readelf/header_info.h"
+#include "include/header_info.h"
 
 static void print_type(uint32_t p_type)
 {

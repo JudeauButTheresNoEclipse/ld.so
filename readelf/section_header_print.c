@@ -4,8 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "readelf/print_headers.h"
-#include "readelf/header_info.h"
+#include "include/print_headers.h"
+#include "include/header_info.h"
 
 static void print_type(uint32_t sh_type)
 {

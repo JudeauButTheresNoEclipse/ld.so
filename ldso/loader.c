@@ -1,4 +1,4 @@
-#include "include/functions.h"
+#include "include/loader.h"
 #include "stdlib.h"
 #include "string.h"
 #include "stdio.h"
@@ -14,10 +14,6 @@
 #define PAGE_SIZE 4096
 #define ALIGN(x) (PAGE_SIZE * (x / PAGE_SIZE))
 
-char *get_env(char *name);
-elf_auxv_t *get_vdso(void);
-
-
 struct link_map *build_link_map(char **table, elf_addr base, elf_addr vdso)
 {
     struct link_map *map = NULL;
@@ -26,7 +22,7 @@ struct link_map *build_link_map(char **table, elf_addr base, elf_addr vdso)
     int count = 1;
     while (*table)
     {
-        struct link_map *new = malloc(sizeof(struct link_map)); 
+        struct link_map *new = xmalloc(sizeof(struct link_map)); 
         new->l_name = *table;
         
         
@@ -113,21 +109,11 @@ elf_addr load_program(elf_phdr *program, elf_ehdr *elf, struct link_map *map)
     {
         if (program->p_type == PT_LOAD)
         {
-            int filedes = open(map->l_name, O_RDONLY);
-            if (filedes == -1)
-            {
-                printf("could not read %s\n", map->l_name);
-                _exit(1);
-            }
-            int l = lseek(filedes, program->p_offset, SEEK_SET);
+            int filedes = xopen(map->l_name, O_RDONLY);
+            xlseek(filedes, program->p_offset, SEEK_SET);
             elf_addr addr = program->p_vaddr + map->l_addr;
-            long r = read(filedes, (void *)addr, program->p_filesz);
+            long r = xread(filedes, (void *)addr, program->p_filesz);
             close(filedes);
-            if (l < 0 || r < 0)
-            {
-                printf("failed to load program section");
-                _exit(1);
-            }
             load = 1;
             int m = mprotect((void *)ALIGN(addr), r + addr - ALIGN(addr), prot(program->p_flags));
             if (m < 0)

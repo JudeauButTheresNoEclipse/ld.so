@@ -1,5 +1,5 @@
 #include "libdl.h"
-#include "include/functions.h"
+#include "include/loader.h"
 #include "include/elf_manipulation.h"
 #include "include/dependency.h"
 #include "include/utility.h"
@@ -43,7 +43,7 @@ extern void *_dlopen(char *filename, int flags)
         resolve_relocations(new, map, 1);
     else
     {
-        puts("you have to say if you want lazy binding");
+        puts("flag not set, RTLD_LAZY or RTLD_NOW needed");
         _exit(1);
     }
 
