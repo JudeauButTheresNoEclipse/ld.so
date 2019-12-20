@@ -15,11 +15,10 @@
 #include "include/functions.h"
 #include "include/elf_manipulation.h"
 #include "include/dependency.h"
+#include "include/relocations.h"
 
 static elf_auxv_t *vdso;
-uint32_t a = 0;
 static char **envp = NULL;
-
 
 elf_auxv_t *get_vdso(void)
 {
@@ -74,27 +73,6 @@ static void handle_options(char **envp, struct link_map *map)
     }
 }
 
-elf_addr foo(struct link_map *next, int index)
-{
-    //asm volatile(movq 0x260(%rsp), %rsi);
-    //printf("%lx\n", qqc);
-    struct link_map *map = next;
-    while (map->l_prev)
-        map = map->l_prev;
-    elf_ehdr *elf = get_elf_ehdr(next->l_name);
-    elf_rela *rela = (elf_rela *)get_dynamic_element(elf, next->l_name, ".rela.plt");
-    rela += index;
-    char *rela_name = name_from_dynsim_index(elf, next->l_name,
-            ELF64_R_SYM(rela->r_info));
-    //printf("%s\n", rela_name);
-    elf_addr *tmp = (void *)(rela->r_offset + next->l_addr);
-    elf_addr addr = link_map_lookup(map, rela_name);
-    if (addr)
-        *tmp = addr;
-    //printf("%s\n", next->l_name);
-    //printf("%d\n", index);
-    return addr;
-}
 
 
 void ldso_main(u64 *stack)

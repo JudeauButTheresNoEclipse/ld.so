@@ -3,7 +3,6 @@
 #include "types.h"
 
 #include "unistd.h"
-
 void _exit(int rc)
 {
 	syscall1(__NR_exit, rc);

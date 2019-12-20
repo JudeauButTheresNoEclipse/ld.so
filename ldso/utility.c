@@ -5,7 +5,7 @@
 char *strdup(char *s)
 {
     int len = strlen(s);
-    char *res = calloc(len,1);
+    char *res = calloc(len, 2);
     res = memcpy(res, s, len);
     return res;
 }

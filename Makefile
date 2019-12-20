@@ -29,7 +29,7 @@ LDFLAGS = \
 #			ldso/dynamic_section_print.o \
 #			ldso/dynsim_section_print.o \
 #			ldso/readelf/readelf.o \
-#				
+
 LDSO_OBJS = \
 	    ldso/ldso_start.o \
 	    ldso/main.o \
@@ -39,6 +39,8 @@ LDSO_OBJS = \
 		ldso/dependency.o \
 		ldso/utility.o \
 		ldso/reloc.o \
+		ldso/libdl.o \
+		ldso/relocations.o \
 	    $(LIBC_STDIO_OBJS) \
 	    $(LIBC_STRING_OBJS) \
 	    $(LIBC_UNISTD_OBJS) \
@@ -73,7 +75,7 @@ TEST_LIBS = \
 	    libc.so \
 	    libunistd.so \
 	    libstring.so \
-	    libc2.so
+	    libc2.so	\
 
 TESTS = \
 	test-onelib \
@@ -100,22 +102,23 @@ check: $(UNIT_TESTS)
 $(TESTS):
 	$(LINK.o) $^ $(LDLIBS) -o $@
 
-#$(TESTS): LDFLAGS += -Wl,--dynamic-linker=./ld.so -Wl,-rpath,/tmp
 
 $(TESTS): LDFLAGS += -Wl,--dynamic-linker=./ld.so -Wl,-rpath-link=.
 
 
-test-standalone: LDLIBS = -L. -luseless
+test-standalone: LDLIBS = -L. -luseless -l:ld.so
 test-standalone: libc/crt0.o tests/test-standalone.o $(LIBC_OBJS)
 
-test-onelib: LDLIBS = -L. -lc
+test-onelib: LDLIBS = -L. -lc -l:ld.so
 test-onelib: libc/crt0.o tests/test-standalone.o
 
-test-libs: LDLIBS = -L. -lc2
+test-libs: LDLIBS = -L. -lc2 -l:ld.so
 test-libs: libc/crt0.o tests/test-standalone.o
 
 
 $(TEST_LIBS): CFLAGS += -fPIC
+
+$(LDSO_OBJS): CLAGS += -fPIC 
 
 libc.so: $(LIBC_OBJS)
 

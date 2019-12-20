@@ -41,6 +41,7 @@ static char *test(char *path, char *name)
     while (buff)
     {
         char *ret = concatenate(buff, name);
+        printf("%s\n", ret);
         int o = open(ret, O_RDONLY);
         if (o < 0)
         {
@@ -56,7 +57,7 @@ static char *test(char *path, char *name)
     return NULL;
 }
 
-static char *get_lib_absolute_path(char *name, char *binary)
+char *get_lib_absolute_path(char *name, char *binary)
 {
     if (name[0] == '/')
         return name;

@@ -5,6 +5,8 @@
 #include <link.h>
 #include <sys/auxv.h>
 
+struct link_map *full_map;
+
 typedef ElfW(Ehdr) elf_ehdr;
 typedef ElfW(Phdr) elf_phdr;
 typedef ElfW(Shdr) elf_shdr;

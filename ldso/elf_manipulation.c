@@ -323,17 +323,14 @@ elf_addr gnu_hash_lookup(struct link_map *next, char *rela_name)
     sym = syms + n;
     hashval = hashvals + n - symndx;
     size_t i = 0;
-    for (h1 &= ~1; n + i < size; sym++, i++) {
+    for (h1 &= ~1; n + i < size; sym++, i++) 
+    {
         h2 = *hashval++;
-        //printf("TRY %s\n", strtab +  sym->st_name);
         if ((h1 == (h2 & ~1)) && !strcmp(rela_name, strtab + sym->st_name))
-        {
-            //printf("FOUND !!! %lx\n", sym->st_value);
             return sym->st_value + next->l_addr;
-        }
         if (h2 & 1)
             continue;
-        }
+    }
     return 0;
 }
 

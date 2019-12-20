@@ -1,4 +1,9 @@
 {
-local:
-	*;
+    global:
+        _dladdr;
+		_dlclose;
+        _dlopen;
+		_dlsym;
+    local:
+	        *;
 };
