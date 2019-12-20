@@ -3,6 +3,6 @@
 
 
 char *strdup(char *s);
-char *strcpy(char *des, char *src);
+int xopen(char *filename, int flags);
 
 #endif /* !UTILITY_H */

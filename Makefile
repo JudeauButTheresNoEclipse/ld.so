@@ -41,6 +41,7 @@ LDSO_OBJS = \
 		ldso/reloc.o \
 		ldso/libdl.o \
 		ldso/relocations.o \
+		ldso/symbol_resolution.o \
 	    $(LIBC_STDIO_OBJS) \
 	    $(LIBC_STRING_OBJS) \
 	    $(LIBC_UNISTD_OBJS) \

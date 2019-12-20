@@ -6,6 +6,7 @@
 #include "unistd.h"
 #include "include/utility.h"
 #include "include/relocations.h"
+#include "include/symbol_resolution.h"
 
 #include <sys/auxv.h>
 #include <linux/mman.h>
@@ -48,9 +49,13 @@ static void relocation_lazy(struct link_map *next, elf_rela *rela, int nb_rela)
     extern void __reloc(void);
     elf_ehdr *elf = get_elf_ehdr(next->l_name);
     elf_shdr *shdr = get_section_header(elf, next->l_name);
+    elf_shdr *cpy = shdr;
     char *strtab = (void *)get_dynamic_element(elf, next->l_name, ".shstrtab");
-    while (shdr && strcmp(shdr->sh_name + strtab, ".got.plt"))
+    int i = 0;
+    while (i++ < elf->e_shnum && strncmp(shdr->sh_name + strtab, ".got.plt", 8))
         shdr++;
+    if (i == elf->e_shnum + 1)
+        goto out;
     elf_addr *got_plt = (elf_addr *)(shdr->sh_addr + next->l_addr);
     got_plt[1] = (elf_addr)next;
     got_plt[2] = (elf_addr)&__reloc;
@@ -59,8 +64,9 @@ static void relocation_lazy(struct link_map *next, elf_rela *rela, int nb_rela)
         elf_addr *tmp = (void *)(rela->r_offset + next->l_addr);
         *tmp += next->l_addr;
     }
+out:
     free(elf);
-    free(shdr);
+    free(cpy);
     free(strtab);
 }
 

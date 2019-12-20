@@ -78,8 +78,9 @@ static elf_addr allocate_map(elf_phdr *phdr, elf_off offset)
     elf_phdr *prog = phdr;
     while (prog->p_type == PT_LOAD)
         prog++;
-    size_t size = (size_t)(prog->p_vaddr + prog->p_filesz - phdr->p_vaddr);
-    ret = (elf_addr)mmap((void *)(phdr->p_vaddr + offset),
+    elf_addr pos = phdr->p_vaddr + offset;
+    size_t size = prog->p_vaddr + prog->p_filesz - phdr->p_vaddr + pos - ALIGN(pos);
+    ret = (elf_addr)mmap((void *)(ALIGN(pos)),
             size, prot, flags, -1, 0);
     printf("ALLOCATION %lx, %ld\n", phdr->p_vaddr + offset, size);
     if ((void *)ret == MAP_FAILED)
@@ -108,7 +109,6 @@ elf_addr load_program(elf_phdr *program, elf_ehdr *elf, struct link_map *map)
     int size = elf->e_phnum;
     int load = 0;
     elf_addr ret = allocate_map(program, map->l_addr);
-    //printf("MAP: 0x%016lx\n", ret);
     for (int i = 0; i < size; i++)
     {
         if (program->p_type == PT_LOAD)

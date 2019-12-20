@@ -4,6 +4,7 @@
 #include "include/dependency.h"
 #include "include/utility.h"
 #include "include/relocations.h"
+#include "include/symbol_resolution.h"
 #include "stdlib.h"
 #include "string.h"
 #include "stdio.h"
@@ -55,7 +56,7 @@ extern void *_dlopen(char *filename, int flags)
 extern void *_dlsym(void *handle, char *symbol)
 {
     struct link_map *map = handle;
-    elf_addr *res = gnu_hash_lookup(map, symbol);
+    elf_addr *res = (elf_addr *)gnu_hash_lookup(map, symbol);
     map->l_ld = (void *)((char *)(void *)map->l_ld + 1);
     return (void*)res;
 }

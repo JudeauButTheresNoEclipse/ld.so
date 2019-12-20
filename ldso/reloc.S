@@ -1,7 +1,7 @@
 .section .text
 .global __reloc
 .type __reloc, @function
-__reloc:
+__reloc: // heavily inspired by https://github.com/openbsd/src/blob/master/libexec/ld.so/amd64/ldasm.S
 	pushfq                                      // 8
 	pushq	%rax                                // 8
 	pushq	%rcx                                // 8
