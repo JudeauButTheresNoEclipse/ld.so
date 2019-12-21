@@ -31,7 +31,6 @@ extern void *_dlopen(char *filename, int flags)
     new->l_prev = map;
     new->l_name = strdup(filename);
     new->l_addr = map->l_prev->l_addr + 6 * PAGE_SIZE;
-    new->l_ld = 1;
     if (!(flags & RTLD_NOLOAD))
         load_program(phdr, elf, new);
     else
@@ -49,7 +48,6 @@ extern void *_dlopen(char *filename, int flags)
 
     if (flags & RTLD_GLOBAL)
         map->l_next = new;
-
     return new;
 }
 
@@ -57,23 +55,67 @@ extern void *_dlsym(void *handle, char *symbol)
 {
     struct link_map *map = handle;
     elf_addr *res = (elf_addr *)gnu_hash_lookup(map, symbol);
-    map->l_ld = (void *)((char *)(void *)map->l_ld + 1);
     return (void*)res;
 }
 
-int dlinfo(void *handle, int request, void *info);
-int dlclose(void *handle)
+int _dlinfo(void *handle, int request, void *info);
+int _dlclose(void *handle)
 {
     struct link_map *map = handle;
-    char *ref = (void *)map->l_ld;
-    ref--;
-    if (!ref)
-    {
         //TODO unload map;
-        map->l_prev->l_next = map->l_next;
+        if (map->l_prev)
+            map->l_prev->l_next = map->l_next;
+        if (map->l_next)
         map->l_next->l_prev = map->l_prev;
+    return 0;
+}
+
+extern int _dladdr(void *addr, Dl_info *info)
+{
+    struct link_map *map = full_map;
+    while (map)
+    {
+        if ((elf_addr)addr >= map->l_addr && addr <= (void *)(map->l_ld + (elf_addr)((PAGE_SIZE))))
+            break;
+        else
+            map = map->l_next;
+    }
+    if (!map || !map->l_name)
+    {
+        info->dli_sname = NULL;
+        info->dli_saddr = NULL;
         return 0;
     }
-    return (elf_addr)ref;
+    else
+    {
+        info->dli_sname = strdup(map->l_name);
+        info->dli_saddr = (void *)map->l_addr;
+        elf_ehdr *elf = get_elf_ehdr(map->l_name);
+        elf_sym *symtab = get_section(elf, map->l_name, ".dynsym");
+        if (!symtab)
+            return 0;
+        char *dynstr = (char *)get_section(elf, map->l_name, ".dynstr");
+        if (!dynstr)
+        {
+            free(symtab);
+            return 0;
+        }
+        int size = get_section_size(elf, map->l_name, ".dynsym");
+        for (int i = 0; i < size; i++)
+        {
+            elf_addr down = symtab->st_value + map->l_addr;
+            elf_addr up = symtab->st_value + map->l_addr + symtab->st_size;
+            if ((elf_addr)addr >= down && (elf_addr)addr <= up)
+            {
+                info->dli_fbase = (void *)(symtab->st_value);
+                info->dli_fname = strdup(dynstr + symtab->st_name);
+                break;
+            }
+            symtab++;
+        }
+        free(symtab);
+        free(dynstr);
+        free(elf);
+    }
+    return 1;
 }
-int dladdr(void *addr, Dl_info *info);

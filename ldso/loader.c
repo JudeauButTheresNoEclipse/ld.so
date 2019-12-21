@@ -4,30 +4,43 @@
 #include "stdio.h"
 #include "include/elf_manipulation.h"
 #include "unistd.h"
+#include "libdl.h"
 #include "include/utility.h"
 
 #include <sys/auxv.h>
 #include <linux/mman.h>
 #include <asm-generic/fcntl.h>
 #include <errno.h>
+#include <link.h>
 
 #define PAGE_SIZE 4096
 #define ALIGN(x) (PAGE_SIZE * (x / PAGE_SIZE))
 
-struct link_map *build_link_map(char **table, elf_addr base, elf_addr vdso)
+void _debug(void)
 {
-    struct link_map *map = NULL;
+}
+
+struct link_map *build_link_map(char **table, elf_addr base, elf_addr vdso, struct link_map *map)
+{
     struct link_map *ret = NULL;
     int offset = 0;
     int count = 1;
     while (*table)
     {
-        struct link_map *new = xmalloc(sizeof(struct link_map)); 
-        new->l_name = *table;
-        
-        
+        struct link_map *new = NULL;
+        if (offset != 0)
+        {
+            new = xmalloc(sizeof(struct link_map));
+            new->l_prev = map;
+        }
+        else
+        {
+            new = map;
+            new->l_prev = NULL;
+        }
+
         new->l_next = NULL;
-        new->l_prev = map;
+        new->l_name = *table;
         if (!strcmp(*table, "ld.so"))
         {
             new->l_addr = base;
@@ -38,7 +51,7 @@ struct link_map *build_link_map(char **table, elf_addr base, elf_addr vdso)
             new->l_addr = vdso;
             map->l_next = new;
         }
-        else if (map)
+        else if (offset != 0)
         {
             new->l_addr = offset + count * PAGE_SIZE;
             elf_ehdr *elf = get_elf_ehdr(new->l_name);
@@ -78,7 +91,6 @@ static elf_addr allocate_map(elf_phdr *phdr, elf_off offset)
     size_t size = prog->p_vaddr + prog->p_filesz - phdr->p_vaddr + pos - ALIGN(pos);
     ret = (elf_addr)mmap((void *)(ALIGN(pos)),
             size, prot, flags, -1, 0);
-    printf("ALLOCATION %lx, %ld\n", phdr->p_vaddr + offset, size);
     if ((void *)ret == MAP_FAILED)
     {
         printf("failed allocate map\n");

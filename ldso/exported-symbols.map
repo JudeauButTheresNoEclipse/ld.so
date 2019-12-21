@@ -4,6 +4,8 @@
 		_dlclose;
         _dlopen;
 		_dlsym;
+        /*_debug;
+        _r_debug;*/
     local:
 	        *;
 };

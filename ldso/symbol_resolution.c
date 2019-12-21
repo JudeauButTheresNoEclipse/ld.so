@@ -63,7 +63,6 @@ elf_addr gnu_hash_lookup(struct link_map *next, char *rela_name)
     uint32_t *hashvals = buckets + nbuckets;
     uint32_t h2 = h1 >> shift2;
     size_t arch = sizeof(size_t) * 8; //32 or 64 depending on arch
-    //printf("SEARCHING IN %s\n", name);
     
     size_t n = (h1 / arch) & (hashtab[2] - 1);
     elf_addr word = maskwords[(h1 / arch) % hashtab[2]];
@@ -116,7 +115,6 @@ elf_addr hash_lookup(struct link_map *next, char *rela_name)
     size_t size = get_section_size(elf, next->l_name, ".dynsym");
     for (uint32_t i = bucket[hash % nbuckets]; i && i < size; i = chain[i])
     {
-        printf("try: %s - %s\n", strtab + symtab[i].st_name, rela_name);
         if (!strcmp(rela_name, strtab + symtab[i].st_name))
             return symtab[i].st_value + next->l_addr;
     }

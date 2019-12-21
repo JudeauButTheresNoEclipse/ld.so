@@ -117,10 +117,3 @@ int get_section_size(elf_ehdr *elf, char *name, char *section)
     free(table);
     return res;
 }
-
-struct elf_file *init_elf(char *name)
-{
-    struct elf_file *file = malloc(sizeof(struct elf_file));
-    file->ehdr = get_elf_ehdr(name);
-}
-

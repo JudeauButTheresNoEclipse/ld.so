@@ -40,7 +40,6 @@ static char *test(char *path, char *name)
     while (buff)
     {
         char *ret = concatenate(buff, name);
-        printf("%s\n", ret);
         int o = open(ret, O_RDONLY);
         if (o < 0)
         {

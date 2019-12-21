@@ -16,9 +16,11 @@
 #include "include/elf_manipulation.h"
 #include "include/dependency.h"
 #include "include/relocations.h"
+#include "libdl.h"
 
 static elf_auxv_t *vdso;
 static char **envp = NULL;
+struct r_debug _r_debug;
 
 elf_auxv_t *get_vdso(void)
 {
@@ -73,33 +75,51 @@ static void handle_options(char **envp, struct link_map *map)
     }
 }
 
-void ldso_main(u64 *stack)
+
+void ldso_main(u64 *stack, elf_dyn *dynamic)
 {
     int argc = *stack;
     char **argv = (void *)&stack[1];
     envp = argv + argc + 1;
     elf_auxv_t *auxv = find_auxv(envp);
-
-
     char *filename = (void *)get_auxv_entry(auxv, AT_EXECFN)->a_un.a_val;
     elf_addr base = get_auxv_entry(auxv, AT_BASE)->a_un.a_val;
+    struct link_map *map = malloc(sizeof(struct link_map));
+
+    struct r_debug **debug_info = NULL;
+    r_debug = malloc(sizeof(struct r_debug));
+    while (++dynamic->d_tag != DT_NULL)
+        if (dynamic->d_tag == DT_DEBUG)
+            break;
+    r_debug->r_state = RT_CONSISTENT; 
+    r_debug->r_ldbase = (elf_addr)dynamic;
+    r_debug->r_brk = (elf_addr)_debug; 
+    r_debug->r_map = map;
+    r_debug->r_version = 1;
+    
+    if (dynamic->d_tag != DT_NULL)
+    {
+        debug_info = (struct r_debug**)&(dynamic->d_un.d_ptr);
+        *debug_info = r_debug;
+    }
+  
     vdso = (void *)get_auxv_entry(auxv, AT_SYSINFO_EHDR);
     char **table = build_dependency_table(filename, envp, vdso);
+    map = build_link_map(table, base, (elf_addr)vdso, map);
 
 
-    struct link_map *map = build_link_map(table, base, (elf_addr)vdso);
     int lazy = 1;
     if (get_env_value(envp, "LD_BIND_NOW") != NULL)
         lazy = 0;
     for (struct link_map *next = map; next->l_next; next = next->l_next)
         resolve_relocations(next, map, lazy);
     
+    
 
     handle_options(envp, map);
     
 
     u64 entry = get_auxv_entry(auxv, AT_ENTRY)->a_un.a_val;
-    printf("ENTRY: %lx\n", entry);
     
 
     free(table);
