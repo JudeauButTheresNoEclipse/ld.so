@@ -1,0 +1,21 @@
+I did readelf while understanding so the code is really messy i'll try to fix it by sunday.
+
+The VDSO is loaded but I didn't adapted my libc so I don't think it is of any use.
+
+LD_LIBRARY_PATH, rpath, LD_PRELOAD are implemented.
+DT_GNU_HASH resolution should work.
+
+Basic and most common X86_64 relocations are handled.
+
+BIND_NOW behavior is implemented, LAZY bind too, it took a lot of reading but
+thanks to the openbsd-source I have something working.
+
+I really wanted to do libdl because I was really curious about what actual use 
+it could have. dlopen and dlsym should work properly, I could not go further.
+
+DT_DEBUG was also and intresting feature but I didn't manage to make it work in
+the remaining time frame.
+
+I would have liked doing other types of executable but overall I lost way too much time.
+
+Some of the code i'm actually proud of but if I had to do it again I'd do a lot differently.
