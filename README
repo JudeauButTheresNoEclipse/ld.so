@@ -1,6 +1,6 @@
 I did readelf while understanding so the code is really messy i'll try to fix it by sunday.
 
-The VDSO is loaded but I didn't adapted my libc so I don't think it is of any use.
+The VDSO is loaded but I didn't adapt my libc so I don't think it is of any use.
 
 LD_LIBRARY_PATH, rpath, LD_PRELOAD are implemented.
 DT_GNU_HASH resolution should work.

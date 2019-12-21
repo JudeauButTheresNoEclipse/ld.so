@@ -11,6 +11,8 @@
    the symbols of the loaded object and its dependencies are made
    visible as if the object were linked directly into the program.  */
 #define RTLD_GLOBAL	0x00100
+#define RTLD_DI_LINKMAP	2
+#define RTLD_DI_ORIGIN 6
 
 /* Unix98 demands the following flag which is the inverse to RTLD_GLOBAL.
    The implementation does this by default and so we can define the

@@ -58,15 +58,36 @@ extern void *_dlsym(void *handle, char *symbol)
     return (void*)res;
 }
 
-int _dlinfo(void *handle, int request, void *info);
+int _dlinfo(void *handle, int request, void *info)
+{
+     struct link_map *map = handle;
+     if (request == RTLD_DI_ORIGIN)
+         memcpy(info, map->l_name, strlen(map->l_name));
+     else if (request == RTLD_DI_LINKMAP)
+         info = map;
+     else
+         return 1;
+     return 0;
+}
 int _dlclose(void *handle)
 {
     struct link_map *map = handle;
-        //TODO unload map;
-        if (map->l_prev)
-            map->l_prev->l_next = map->l_next;
-        if (map->l_next)
+    elf_ehdr *elf = get_elf_ehdr(map->l_name);
+    elf_phdr *phdr = get_program_header(elf, map->l_name);
+    elf_phdr *cpy = phdr;
+    elf_addr base = 0;
+    while (phdr->p_type != PT_LOAD)
+        phdr++;
+    base = phdr->p_vaddr;
+    while (phdr->p_type != PT_LOAD)
+        phdr++;
+    munmap((void *)base, phdr->p_vaddr + phdr->p_filesz - base);
+    if (map->l_prev)
+        map->l_prev->l_next = map->l_next;
+    if (map->l_next)
         map->l_next->l_prev = map->l_prev;
+    free(elf);
+    free(cpy);
     return 0;
 }
 
