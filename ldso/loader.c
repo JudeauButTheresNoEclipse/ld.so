@@ -25,6 +25,7 @@ struct link_map *build_link_map(char **table, elf_addr base, elf_addr vdso, stru
     struct link_map *ret = NULL;
     int offset = 0;
     int count = 1;
+    elf_addr position = 0;
     while (*table)
     {
         struct link_map *new = NULL;
@@ -53,10 +54,11 @@ struct link_map *build_link_map(char **table, elf_addr base, elf_addr vdso, stru
         }
         else if (offset != 0)
         {
-            new->l_addr = offset + count * PAGE_SIZE;
+            //new->l_addr = offset + count * PAGE_SIZE;
+            new->l_addr = ALIGN(position) + 3 * PAGE_SIZE;
             elf_ehdr *elf = get_elf_ehdr(new->l_name);
             elf_phdr *program = get_program_header(elf, new->l_name);
-            load_program(program, elf, new);
+            load_program(program, elf, new, &position);
             free(elf);
             free(program);
             map->l_next = new;
@@ -65,7 +67,8 @@ struct link_map *build_link_map(char **table, elf_addr base, elf_addr vdso, stru
         else
         {
             new->l_addr = 0;
-            offset = load_elf_binary(new);
+            offset = load_elf_binary(new, &position);
+            offset = 1;
             ret = new;
         }
         map = new; 
@@ -111,7 +114,7 @@ static int prot (uint32_t flags)
     return res;
 }
 
-elf_addr load_program(elf_phdr *program, elf_ehdr *elf, struct link_map *map)
+elf_addr load_program(elf_phdr *program, elf_ehdr *elf, struct link_map *map, elf_addr *base)
 {
 
     int size = elf->e_phnum;
@@ -133,6 +136,8 @@ elf_addr load_program(elf_phdr *program, elf_ehdr *elf, struct link_map *map)
                 printf("incorrect permissions for segment %d in %s\n", i, map->l_name);
                 _exit(0);
             }
+            if (base)
+                *base = addr + r;
         }
         else if (program->p_type == PT_DYNAMIC)
             map->l_ld = (elf_dyn *)(program->p_vaddr + map->l_addr);
@@ -143,11 +148,11 @@ elf_addr load_program(elf_phdr *program, elf_ehdr *elf, struct link_map *map)
     return ret;
 }
 
-elf_addr load_elf_binary(struct link_map *map)
+elf_addr load_elf_binary(struct link_map *map, elf_addr *base)
 {
     elf_ehdr *elf = get_elf_ehdr(map->l_name);
     elf_phdr *phdr = get_program_header(elf, map->l_name);
-    elf_addr ret = load_program(phdr, elf, map);
+    elf_addr ret = load_program(phdr, elf, map, base);
     free(elf);
     return ret;
 }

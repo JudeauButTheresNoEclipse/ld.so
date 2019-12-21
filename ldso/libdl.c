@@ -28,11 +28,12 @@ extern void *_dlopen(char *filename, int flags)
     struct link_map *new = malloc(sizeof(struct link_map));
     while (map->l_next)
         map = map->l_next;
+    new->l_next = NULL;
     new->l_prev = map;
     new->l_name = strdup(filename);
     new->l_addr = map->l_prev->l_addr + 6 * PAGE_SIZE;
     if (!(flags & RTLD_NOLOAD))
-        load_program(phdr, elf, new);
+        load_program(phdr, elf, new, NULL);
     else
         return new;
 
@@ -77,11 +78,20 @@ int _dlclose(void *handle)
     elf_phdr *cpy = phdr;
     elf_addr base = 0;
     while (phdr->p_type != PT_LOAD)
+    {
+        if (phdr->p_type == PT_NULL)
+            return 1;
         phdr++;
+    }
     base = phdr->p_vaddr;
-    while (phdr->p_type != PT_LOAD)
+    while (phdr->p_type == PT_LOAD)
         phdr++;
-    munmap((void *)base, phdr->p_vaddr + phdr->p_filesz - base);
+    int m = munmap((void *)base, phdr->p_vaddr + phdr->p_filesz - base);
+    if (m == -1)
+    {
+        printf("could not close %s\n", map->l_name);
+        return 1;
+    }
     if (map->l_prev)
         map->l_prev->l_next = map->l_next;
     if (map->l_next)
